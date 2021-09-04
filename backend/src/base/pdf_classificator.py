@@ -55,8 +55,7 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
 
     file_counter = 0 # счётчик извлечённых изображений
 
-    # цикл по страницам pdf
-    for page_index in range(min(len(pdf_file), 4)):
+    for page_index in range(min(len(pdf_file), 4)): # цикл по страницам pdf
         
         page = pdf_file[page_index]
         if __name__ == "__main__": # диагностический вывод сводки по страницам для отладки
@@ -66,15 +65,12 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
             else:
                 print("[!] No images found on page", page_index)
 
-        for image_index, img in enumerate(page.getImageList(), start=1):
+        for image_index, img in enumerate(page.getImageList(), start=1): # цикл по изображениям на странице
 
-            # get the XREF of the image
             xref = img[0]
-            
-            # extract the image bytes
             base_image = pdf_file.extractImage(xref)
-            image_bytes = base_image["image"]
 
+            # работа с извлечённым изображением через PIL и BytesIO вместо файла
             buffer = BytesIO()
             buffer.write(base_image["image"])
             buffer.seek(0)
@@ -87,14 +83,14 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
                 file_counter += 1
             
             try:
-                pytesseract_str = pytesseract.image_to_string(pil_image, lang="rus")
+                pytesseract_str = pytesseract.image_to_string(pil_image, lang="rus") # собственно, OCR
                 result_text += pytesseract_str.lower()
                 if __name__ == "__main__": # диагностическая печать для отладки
                     print("pytesseract returns: ", pytesseract_str)
-                code = regexp_classifier(result_text, settings)
+                code = regexp_classifier(result_text, settings) # попытка классификации по накопленному тексту
                 if code is not None:
                     return code
-            except Exception as e:
+            except Exception as e: # возникает, если в pdf вложены сканы в формате jpx
                 mes = "Не удалось обработать изображение" + \
                     ", страница " + str(image_index) +\
                     ", расширение " + str(base_image["ext"]) + \
@@ -118,16 +114,8 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
     #     ["a397c2cf-c5ad-4560-bc65-db4f79840f82", []],# Описание_деятельности_ГК
     #     ["3af37c7f-d8b1-46de-98cc-683b0ffb3513", []],# Решение_назначение ЕИО
     # ]
-    # classification_scores = [0 for _ in matching_table]
-    # for i in range(len(matching_table)):
-    #     for phrase in matching_table[i][1]:
-    #         if phrase in result_text:
-    #             classification_scores[i] += 1.0 / len(matching_table[i][1])
-    # maxval = max(classification_scores)
-    # index_max = classification_scores.index(maxval)
-    # code = matching_table[index_max][0]
 
-    temp_file.close()
+    temp_file.close() # удаление временного файла
     return code, status
 
 def regexp_classifier(doc_text : str, settings) -> str:
