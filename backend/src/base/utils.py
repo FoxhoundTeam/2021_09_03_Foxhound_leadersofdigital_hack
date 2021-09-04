@@ -1,11 +1,11 @@
-from backend.src.base.models import Setting
+from src.base.models import Setting
 from typing import Tuple
 
 import requests
 import json
 from src.settings import CREDS, API_URL
 
-from backend.src.base.xls_processing import analyze_xls
+from src.base.xls_processing import analyze_xls
 
 
 def send_to_API(file, name, code, inn, mime_type):

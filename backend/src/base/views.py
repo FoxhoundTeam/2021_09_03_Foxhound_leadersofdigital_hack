@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from src.base.models import Setting
 from src.base.serializers import RecognizeSerializer, SettingSerializer
 
-from backend.src.base.utils import process_doc
+from src.base.utils import process_doc
 
 MIME_TYPES = {
     'pdf': 'application/pdf',
