@@ -101,8 +101,6 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
                     ", размер ", str(base_image["width"]) + "x" + str(base_image["height"])
                 if __name__ == "__main__":
                     print(mes)
-                else:
-                    return None, mes
 
     result_text = result_text.lower()
     code, status = regexp_classifier(result_text, settings)
