@@ -24,7 +24,7 @@ def analyze_xls(file, settings) -> str:
                                 allow = True
                                 break
                         except:
-                            raise ValueError(f"Не верный паттерн в условии {criterias_type['name']}")
+                            raise ValueError(f"Неверный паттерн в условии {criterias_type['name']}")
                 else:
                     for phrase in phrases:
                         if phrase == critetias['text']:
