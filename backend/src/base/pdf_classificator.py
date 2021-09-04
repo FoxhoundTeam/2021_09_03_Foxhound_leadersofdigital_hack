@@ -43,12 +43,16 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
     
     # извлечение текста, хранящегося в pdf
     text_from_pdf = textract.process(temp_file.name)
-    result_text += text_from_pdf.decode("utf-8").lower()
+    result_text += text_from_pdf.decode("utf-8")
+    result_text = result_text.lower()
+    if __name__ == "__main__":  # диагностическая печать для отладки
+        print("result_text = ", result_text)
 
     # попытка классифицировать документ по накопленному тексту
-    code = regexp_classifier(result_text, settings)
+    code, status = regexp_classifier(result_text, settings)
     if code is not None:
-        return code
+        print("return", code)
+        return code, status
 
     # открытие pdf для извлечения изображений и их распознавания
     pdf_file = fitz.open(temp_file.name)
@@ -66,7 +70,7 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
                 print("[!] No images found on page", page_index)
 
         for image_index, img in enumerate(page.getImageList(), start=1): # цикл по изображениям на странице
-
+            
             xref = img[0]
             base_image = pdf_file.extractImage(xref)
 
@@ -87,9 +91,9 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
                 result_text += pytesseract_str.lower()
                 if __name__ == "__main__": # диагностическая печать для отладки
                     print("pytesseract returns: ", pytesseract_str)
-                code = regexp_classifier(result_text, settings) # попытка классификации по накопленному тексту
+                code, status = regexp_classifier(pytesseract_str.lower(), settings) # попытка классификации по накопленному тексту
                 if code is not None:
-                    return code
+                    return code, status
             except Exception as e: # возникает, если в pdf вложены сканы в формате jpx
                 mes = "Не удалось обработать изображение" + \
                     ", страница " + str(image_index) +\
