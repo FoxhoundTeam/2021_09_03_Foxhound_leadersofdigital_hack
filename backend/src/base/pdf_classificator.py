@@ -41,10 +41,10 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
     
     text_from_pdf = textract.process(temp_file.name)
     result_text += text_from_pdf.decode("utf-8").lower()
-    code = regexp_classifier(result_text, settings)
+    code, status = regexp_classifier(result_text, settings)
     if code is not None:
-        return code
-
+        return code, status
+    
     pdf_file = fitz.open(temp_file.name)
 
     file_counter = 0
@@ -137,7 +137,7 @@ def regexp_classifier(doc_text : str, settings) -> str:
     for criterias_type in settings:
         for criterias in criterias_type['criterias']:
             if criterias['type'] == 'r':
-                match = re.search(criterias['text'], doc_text)
+                match = re.search(criterias["text"], doc_text)
                 if __name__ == "__main__":
                     print("match = ", match)
                 if match:
