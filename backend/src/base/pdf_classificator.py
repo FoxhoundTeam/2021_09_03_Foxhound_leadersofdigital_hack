@@ -4,7 +4,7 @@
 import textract # https://textract.readthedocs.io/en/latest/installation.html
 
 import fitz
-from pillow import Image
+from PIL import Image
 
 import pytesseract
 import sys, os, io, tempfile, re
@@ -85,16 +85,17 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
                 if __name__ == "__main__":
                     print("pytesseract returns: ", pytesseract_str)
             except Exception as e:
+                mes = "Не удалось обработать изображение" + \
+                    ", страница " + str(image_index) +\
+                    ", расширение " + str(base_image["ext"]) + \
+                    ", размер ", str(base_image["width"]) + "x" + str(base_image["height"])
                 if __name__ == "__main__":
-                    print("Не удалось обработать изображение",
-                    ", страница ", image_index,
-                    ", расширение ", base_image["ext"],
-                    ", размер ", str(base_image["width"]) + "x" + str(base_image["height"]))
-
-
+                    print(mes)
+                else:
+                    return None, mes
 
     result_text = result_text.lower()
-    code = regexp_classifier(result_text, settings)
+    code, status = regexp_classifier(result_text, settings)
 
     # matching_table = [
     #     ["555ced1c-c169-4d61-9a82-348801494581", ["положен", "совет", "директоров"], ""], # Учредительные и иные внутренние документы
@@ -117,7 +118,7 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
     # code = matching_table[index_max][0]
 
     temp_file.close()
-    return code
+    return code, status
 
 def regexp_classifier(doc_text : str, settings) -> str:
     '''
@@ -133,13 +134,13 @@ def regexp_classifier(doc_text : str, settings) -> str:
                 match = re.search(criterias['text'], doc_text)
                 print("match = ", match)
                 if match:
-                    return criterias_type['code']
+                    return criterias_type['code'], 'OK'
             elif criterias['type'] == 's':
                 if criterias['text'] in doc_text:
-                    return criterias_type['code']
+                    return criterias_type['code'], 'OK'
             else:
-                return None
-    return None
+                return None, 'Не подходит под текущие критерии'
+    return None, 'Не подходит под текущие критерии'
 
 if __name__ == "__main__":
     print("*** analyze_pdf2(text):")

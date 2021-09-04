@@ -1,3 +1,4 @@
+from src.base.pdf_classificator import analyze_pdf2
 from rest_framework.serializers import ValidationError
 from src.base.models import Setting
 from typing import Tuple
@@ -37,8 +38,7 @@ def process_doc(file, ext, setting) -> Tuple[str, str, str]:
         if ext in ("xlsx", 'xls'):
             code, status = analyze_xls(file, setting)  # Кирилл
         elif ext == "pdf":
-            code, status = None, 'Не поддерживается'
-            # code = analyze_pdf(filename) # Антон Н.
+            code, status = analyze_pdf2(file, setting) # Антон Н.
         else:
             raise ValidationError("Загрузите документ с расширением xls/xlsx или pdf")
     except Exception as ex:
