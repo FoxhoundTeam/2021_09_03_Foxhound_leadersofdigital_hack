@@ -5,11 +5,14 @@ from rest_framework.decorators import action
 from src.base.models import Setting
 from src.base.serializers import RecognizeSerializer, SettingSerializer
 
+from backend.src.base.utils import process_doc
+
 MIME_TYPES = {
     'pdf': 'application/pdf',
     'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'xls': 'application/vnd.ms-excel',
 }
+
 
 class SettingViewSet(viewsets.ModelViewSet):
     queryset = Setting.objects.all()
@@ -22,11 +25,13 @@ class SettingViewSet(viewsets.ModelViewSet):
         data = data.validated_data
         settings = SettingSerializer(Setting.objects.all(), many=True).data
         old_name = data['filename']
-        file_name = 'New name.xlsx'
-        code = '33a37ce4-c6a9-4dad-8424-707abd47c125'
-        mime_type = MIME_TYPES[old_name.split('.')[-1]]
-
-        # DO SOME ACTIONS
+        ext = old_name.split('.')[-1]
+        file_name, code, error_str = process_doc(
+            file=data['file'],
+            ext=ext,
+            setting=settings,
+        )
+        mime_type = MIME_TYPES[ext]
 
         send_to_API(data['file'], file_name, code, data['inn'], mime_type)
 
@@ -34,5 +39,6 @@ class SettingViewSet(viewsets.ModelViewSet):
             {
                 'new_name': file_name,
                 'code': mime_type,
+                'error_str': error_str,
             }
         )

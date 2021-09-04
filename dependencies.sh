@@ -5,7 +5,7 @@ apt-get -y install flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig 
 apt-get -y install python3-pip
 pip3 install textract
 
-pip3 install pillow
 pip3 install pytesseract
 pip3 install pdf2image
-apt-get -y install tesseract-ocr
+pip3 install PyMuPDF Pillow
+sudo apt-get install tesseract-ocr
