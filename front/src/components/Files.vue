@@ -1,14 +1,29 @@
 <template>
   <v-card>
-    <v-toolbar dark color="primary">
+    <v-toolbar extended dark color="primary">
       <v-toolbar-title
         >Файлы найденные в {{ $store.state.pathToFiles || "загруженной папке" }}
       </v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-toolbar-title
-        >Для распознавания доступно
-        {{ $store.state.filesToRecognize.length }} файлов</v-toolbar-title
-      >
+      <template #extension>
+        <v-toolbar-title v-if="!loadingAllState"
+          >Для распознавания доступно
+          {{ $store.state.filesToRecognize.length }} файлов</v-toolbar-title
+        >
+        <v-toolbar-title v-else
+          >Распознаем документы... Распознано {{ recognized.length }} из
+          {{ $store.state.filesToRecognize.length }} файлов, с ошибкой
+          {{ unrecognized.length }}</v-toolbar-title
+        >
+        <v-progress-linear
+          :active="loadingAllState"
+          absolute
+          bottom
+          :indeterminate="!(recognized.length + unrecognized.length)"
+          v-model="loadProgress"
+          :query="true"
+          color="white"
+        ></v-progress-linear
+      ></template>
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-btn
@@ -134,14 +149,16 @@
                 >
               </v-col>
             </v-row>
+            <v-row v-else-if="selected.state === 'warning'">
+              <v-col cols="12">
+                <v-alert type="warning">{{ selected.message }}</v-alert>
+              </v-col>
+            </v-row>
           </v-card>
         </v-scroll-y-transition>
       </v-col>
     </v-row>
-    <v-overlay
-      class="text-center"
-      :value="$store.state.loadingFiles || loadingAllState"
-    >
+    <v-overlay class="text-center" :value="$store.state.loadingFiles">
       <p v-if="$store.state.loadingFiles">Загружаем файлы с диска. Подождите</p>
       <p v-else>Распознаём файлы. Подождите</p>
       <v-progress-circular indeterminate size="64"></v-progress-circular>
@@ -182,6 +199,8 @@ export default {
       open: [],
       loadingState: false,
       loadingAllState: false,
+      recognized: [],
+      unrecognized: [],
     };
   },
   computed: {
@@ -192,32 +211,44 @@ export default {
 
       return this.$store.getters.getFile(id);
     },
+    loadProgress() {
+      return ((this.recognized.length + this.unrecognized.length) / (this.$store.state.filesToRecognize.length || 1)) * 100;
+    },
   },
   methods: {
     async loadSelected(selected) {
       this.loadingState = true;
       let response = await this.recognize(selected);
-      if (response.status == 200) {
+      if (response.status == 200 && response.data.code) {
         let data = response.data;
         selected.new_name = data.new_name;
         selected.code = data.code;
         selected.state = "success";
+      } else {
+        selected.state = "warning";
+        selected.message = response.data.status;
       }
       this.loadingState = false;
     },
     async loadAll() {
       this.loadingAllState = true;
+      this.recognized = [];
+      this.unrecognized = [];
       for (let file of this.$store.state.filesToRecognize) {
         let response = await this.recognize(file);
-        console.log(response);
+        let selected = this.$store.getters.getFile(file.resource_id);
+        if (response.status == 200 && response.data.code) {
+          let data = response.data;
+          selected.new_name = data.new_name;
+          selected.code = data.code;
+          selected.state = "success";
+          this.recognized.push(selected);
+        } else {
+          selected.state = "warning";
+          selected.message = response.data.status;
+          this.unrecognized.push(selected);
+        }
       }
-      // if (response.status == 200) {
-      //   // let data = response.data;
-      //   // selected.new_name = data.new_name;
-      //   // selected.code = data.code;
-      //   // selected.state = "success";
-      //   console.log(response);
-      // }
       this.loadingAllState = false;
     },
     async recognize(data) {

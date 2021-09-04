@@ -5,11 +5,14 @@
         <v-tabs class="mb-4" v-model="tab" align-with-title>
           <v-tabs-slider></v-tabs-slider>
 
-          <v-tab key="url"> Ссылка </v-tab>
-          <v-tab key="folder"> Папка </v-tab>
+          <v-tab> Папка </v-tab>
+          <v-tab> Ссылка </v-tab>
         </v-tabs>
         <v-tabs-items v-model="tab">
-          <v-tab-item key="url">
+          <v-tab-item>
+            <upload-folder class="mt-3" />
+          </v-tab-item>
+          <v-tab-item>
             <v-text-field
               class="mt-3"
               label="Введите ссылку на диск"
@@ -17,9 +20,6 @@
               outlined
               v-model="pathToFiles"
             ></v-text-field>
-          </v-tab-item>
-          <v-tab-item key="folder">
-            <upload-folder class="mt-3" />
           </v-tab-item>
         </v-tabs-items>
         <v-text-field

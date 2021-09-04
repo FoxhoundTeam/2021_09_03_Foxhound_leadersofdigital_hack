@@ -1,10 +1,11 @@
 import math
+from typing import Tuple
 
 import pandas as pd
 import re
 
 
-def analyze_xls(file, settings) -> str:
+def analyze_xls(file, settings) -> Tuple[str, str]:
     try:
         df = pd.read_excel(file)
         phrases = set()
@@ -35,7 +36,7 @@ def analyze_xls(file, settings) -> str:
                     break
 
             if global_allow:
-                return criterias_type['code']
+                return criterias_type['code'], 'OK'
     except:
         raise RuntimeError(f"Ошибка обработки")
-    raise ValueError('Не подходит под текущие критерии')
+    return None, 'Не подходит под текущие критерии'
