@@ -17,6 +17,7 @@ RUN chmod +x /dependencies.sh
 RUN ./dependencies.sh
 RUN pip3 install -r requirements.txt
 
+COPY ./rus.traineddata /usr/share/tesseract-ocr/4.00/tessdata/
 
 RUN apt-get remove -y build-essential \
   python3-dev \

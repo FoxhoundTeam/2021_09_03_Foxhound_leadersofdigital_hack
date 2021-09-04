@@ -34,7 +34,7 @@
           @click="$router.replace({ name: 'Files' })"
           block
           :disabled="
-            (!$store.state.pathToFiles.length && !$store.state.tree) ||
+            (!$store.state.pathToFiles.length && !$store.state.tree.length) ||
             !$store.state.INN.length
           "
           >Продолжить</v-btn
