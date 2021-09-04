@@ -1,3 +1,4 @@
+from rest_framework.serializers import ValidationError
 from src.base.models import Setting
 from typing import Tuple
 
@@ -9,17 +10,20 @@ from src.base.xls_processing import analyze_xls
 
 
 def send_to_API(file, name, code, inn, mime_type):
+    unrecognised = False
+    if not code:
+        unrecognised = True
+    data = {
+        'createRequest': {
+            'unrecognised': unrecognised,
+            'inn': inn,
+        }
+    }
+    if code:
+        data['createRequest']['documentNomenclatureId'] = code
+    data['createRequest'] = json.dumps(data['createRequest'])
     headers = {
         'Authorization': f"Basic {CREDS}",
-    }
-    data = {
-        'createRequest': json.dumps(
-            {
-                'documentNomenclatureId': code,
-                'unrecognised': False,
-                'inn': inn,
-            }
-        )
     }
     files = {
         'attachments': (name, file, mime_type),
@@ -31,15 +35,16 @@ def send_to_API(file, name, code, inn, mime_type):
 def process_doc(file, ext, setting) -> Tuple[str, str, str]:
     try:
         if ext in ("xlsx", 'xls'):
-            code = analyze_xls(file, setting)  # Кирилл
+            code, status = analyze_xls(file, setting)  # Кирилл
         elif ext == "pdf":
-            code = '1'
+            code, status = None, 'Не поддерживается'
             # code = analyze_pdf(filename) # Антон Н.
         else:
-            return "None", "None", "Загрузите документ с расширением xls/xlsx или pdf"
+            raise ValidationError("Загрузите документ с расширением xls/xlsx или pdf")
     except Exception as ex:
-        return "None", "None", f"Ошибка в процессе обработки {ex}"
-    # recommended_name = get_recommended_name(filename, type)
+        raise ValidationError(f"Ошибка в процессе обработки {ex}")
+    if not code:
+        return None, None, status
     setting = Setting.objects.get(code=code)
     recommended_name = setting.name + '.' + setting.type
-    return recommended_name, code, ''
+    return recommended_name, code, status

@@ -4,7 +4,7 @@
 import textract # https://textract.readthedocs.io/en/latest/installation.html
 
 import fitz
-from PIL import Image
+from pillow import Image
 
 import pytesseract
 import sys, os, io, tempfile, re

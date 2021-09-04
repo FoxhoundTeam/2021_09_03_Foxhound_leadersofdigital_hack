@@ -1,6 +1,6 @@
 from src.base.utils import send_to_API
 from rest_framework.response import Response
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from src.base.models import Setting
 from src.base.serializers import RecognizeSerializer, SettingSerializer
@@ -26,19 +26,18 @@ class SettingViewSet(viewsets.ModelViewSet):
         old_name = data['filename']
         ext = old_name.split('.')[-1]
         settings = SettingSerializer(Setting.objects.filter(type=ext), many=True).data
-        file_name, code, error_str = process_doc(
+        file_name, code, status = process_doc(
             file=data['file'],
             ext=ext,
             setting=settings,
         )
         mime_type = MIME_TYPES[ext]
-
-        send_to_API(data['file'], file_name, code, data['inn'], mime_type)
+        send_to_API(data['file'], file_name or old_name, code, data['inn'], mime_type)
 
         return Response(
             {
                 'new_name': file_name,
-                'code': mime_type,
-                'error_str': error_str,
+                'code': code,
+                'status': status,
             }
         )

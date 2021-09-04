@@ -3,10 +3,16 @@ import http from './http'
 import Axios from 'axios'
 import Vue from 'vue'
 
+const AVAILABLE_TYPES = [
+    "application/pdf",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
+
 Vue.use(Vuex)
 
 function customFilter(object, id) {
-    if (Object.prototype.hasOwnProperty.call(object, 'id') && object["id"] === id)
+    if (Object.prototype.hasOwnProperty.call(object, 'resource_id') && object["resource_id"] === id)
         return object;
 
     for (var i = 0; i < Object.keys(object).length; i++) {
@@ -20,6 +26,27 @@ function customFilter(object, id) {
     return null;
 }
 
+async function recursiveTreeFromDiskBuilder(context, path, object) {
+    if (object.type !== 'dir') {
+        if (AVAILABLE_TYPES.findIndex((v) => v === object.mime_type) !=
+            -1) {
+            context.commit('addFile', object);
+            object.recogniziable = true;
+        }
+        return object;
+    }
+    object = await (await fetch(
+        `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${path}&path=${object.path}`
+    )).json()
+    let items = [];
+    for (var item of object._embedded.items) {
+        item = await recursiveTreeFromDiskBuilder(context, path, item);
+        items.push(item)
+    }
+    object.items = items
+    return object;
+}
+
 
 const store = new Vuex.Store({
     state: {
@@ -28,10 +55,13 @@ const store = new Vuex.Store({
         settings: [],
         pathToFiles: "",
         INN: "",
+        tree: [],
+        loadingFiles: false,
+        filesToRecognize: [],
     },
     getters: {
         getFile: state => id => {
-            return customFilter(state.files, id);
+            return customFilter(state.tree, id);
         }
     },
     mutations: {
@@ -49,6 +79,15 @@ const store = new Vuex.Store({
         },
         setSettings(state, settings) {
             state.settings = settings;
+        },
+        setTree(state, tree) {
+            state.tree = tree;
+        },
+        setLoadingFiles(state, loading) {
+            state.loadingFiles = loading;
+        },
+        addFile(state, file) {
+            state.filesToRecognize.push(file);
         }
     },
     actions: {
@@ -56,7 +95,17 @@ const store = new Vuex.Store({
             let settings = (await http.getList('Setting', {}, true)).data;
             context.commit('setSettings', settings);
         },
-        async addItem(context, data){
+        async getFiles(context) {
+            context.commit('setLoadingFiles', true);
+            let root = await (await fetch(
+                `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${context.state.pathToFiles}`
+            )).json()
+            context.commit('setTree', root._embedded.items);
+            root = await recursiveTreeFromDiskBuilder(context, context.state.pathToFiles, root);
+            context.commit('setTree', root.items);
+            context.commit('setLoadingFiles', false);
+        },
+        async addItem(context, data) {
             let item_data = data.data
             let mutation = data.mutation;
             let response = (await http.createItem(data.url, item_data, true)).data;
@@ -64,7 +113,7 @@ const store = new Vuex.Store({
             items.push(response);
             context.commit(mutation, items);
         },
-        async updateItem(context, data){
+        async updateItem(context, data) {
             let item_data = data.data
             let mutation = data.mutation;
             let dataID = data.dataID;

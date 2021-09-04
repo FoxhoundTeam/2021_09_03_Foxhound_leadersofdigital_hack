@@ -4,7 +4,7 @@ import Vue from 'vue';
 export default {
     urls: {
         Setting: "/rest_api/setting/",
-        Recognize: "/rest_api/setting/recognize/"
+        Recognize: "/rest_api/setting/recognize/",
     },
     getFilterValues: async function (filters) {
         var filter = "";

@@ -1,21 +1,53 @@
 <template>
   <v-card>
-    <v-card-title class="indigo white--text text-h5">
-      Файлы найденные в {{ $store.state.pathToFiles }}
-    </v-card-title>
+    <v-toolbar extended dark color="primary">
+      <v-toolbar-title
+        >Файлы найденные в {{ $store.state.pathToFiles || "загруженной папке" }}
+      </v-toolbar-title>
+      <template #extension>
+        <v-toolbar-title v-if="!loadingAllState"
+          >Для распознавания доступно
+          {{ $store.state.filesToRecognize.length }} файлов</v-toolbar-title
+        >
+        <v-toolbar-title v-else
+          >Распознаем документы... Распознано {{ recognized.length }} из
+          {{ $store.state.filesToRecognize.length }} файлов, с ошибкой
+          {{ unrecognized.length }}</v-toolbar-title
+        >
+        <v-progress-linear
+          :active="loadingAllState"
+          absolute
+          bottom
+          :indeterminate="!(recognized.length + unrecognized.length)"
+          v-model="loadProgress"
+          :query="true"
+          color="white"
+        ></v-progress-linear
+      ></template>
+      <v-spacer></v-spacer>
+      <v-toolbar-items>
+        <v-btn
+          dark
+          text
+          @click="loadAll"
+          :disabled="!$store.state.filesToRecognize.length"
+          >Распознать все</v-btn
+        >
+      </v-toolbar-items>
+    </v-toolbar>
+
     <v-row class="pa-4" justify="space-between">
       <v-col cols="5">
         <v-treeview
           :active.sync="active"
           :open.sync="open"
-          :items="dataFiles"
-          :loadChildren="loadChildren"
+          :items="$store.state.tree"
           activatable
           color="success"
           open-on-click
           transition
           item-key="resource_id"
-          item-children="_embedded.items"
+          item-children="items"
         >
           <template v-slot:prepend="{ item, open }">
             <v-icon v-if="item.type === 'dir'">
@@ -117,31 +149,25 @@
                 >
               </v-col>
             </v-row>
+            <v-row v-else-if="selected.state === 'warning'">
+              <v-col cols="12">
+                <v-alert type="warning">{{ selected.message }}</v-alert>
+              </v-col>
+            </v-row>
           </v-card>
         </v-scroll-y-transition>
       </v-col>
     </v-row>
+    <v-overlay class="text-center" :value="$store.state.loadingFiles">
+      <p v-if="$store.state.loadingFiles">Загружаем файлы с диска. Подождите</p>
+      <p v-else>Распознаём файлы. Подождите</p>
+      <v-progress-circular indeterminate size="64"></v-progress-circular>
+    </v-overlay>
   </v-card>
 </template>
 
 <script>
-import http from '../http'
-function customFilter(object, id) {
-  if (
-    Object.prototype.hasOwnProperty.call(object, "resource_id") &&
-    object["resource_id"] === id
-  )
-    return object;
-
-  for (var i = 0; i < Object.keys(object).length; i++) {
-    if (typeof object[Object.keys(object)[i]] === "object") {
-      var o = customFilter(object[Object.keys(object)[i]], id);
-      if (o != null) return o;
-    }
-  }
-
-  return null;
-}
+import axios from "axios";
 
 export default {
   data() {
@@ -171,8 +197,10 @@ export default {
       ],
       active: [],
       open: [],
-      dataFiles: [],
       loadingState: false,
+      loadingAllState: false,
+      recognized: [],
+      unrecognized: [],
     };
   },
   computed: {
@@ -181,64 +209,82 @@ export default {
 
       const id = this.active[0];
 
-      return this.getFile(id);
+      return this.$store.getters.getFile(id);
+    },
+    loadProgress() {
+      return ((this.recognized.length + this.unrecognized.length) / (this.$store.state.filesToRecognize.length || 1)) * 100;
     },
   },
   methods: {
-    async loadChildren(item) {
-      return fetch(
-        `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${this.$store.state.pathToFiles}&path=${item.path}`
-      )
-        .then((res) => res.json())
-        .then((json) => {
-          for (let data of json._embedded.items) {
-            if (data.type === "dir") {
-              data._embedded = {
-                items: [],
-              };
-            }
-          }
-          item._embedded = json._embedded;
-        })
-        .catch((err) => console.warn(err));
-    },
-    getFile(id) {
-      return customFilter(this.dataFiles, id);
-    },
     async loadSelected(selected) {
       this.loadingState = true;
-      let response = await http.createItem('Recognize', {
-          filename: selected.name,
-          url: selected.file,
-          inn: this.$store.state.INN,
-      }, true)
-      let data = response.data;
-      selected.new_name = data.new_name;
-      selected.code = data.code;
-      selected.state = "success";
+      let response = await this.recognize(selected);
+      if (response.status == 200 && response.data.code) {
+        let data = response.data;
+        selected.new_name = data.new_name;
+        selected.code = data.code;
+        selected.state = "success";
+      } else {
+        selected.state = "warning";
+        selected.message = response.data.status;
+      }
       this.loadingState = false;
+    },
+    async loadAll() {
+      this.loadingAllState = true;
+      this.recognized = [];
+      this.unrecognized = [];
+      for (let file of this.$store.state.filesToRecognize) {
+        let response = await this.recognize(file);
+        let selected = this.$store.getters.getFile(file.resource_id);
+        if (response.status == 200 && response.data.code) {
+          let data = response.data;
+          selected.new_name = data.new_name;
+          selected.code = data.code;
+          selected.state = "success";
+          this.recognized.push(selected);
+        } else {
+          selected.state = "warning";
+          selected.message = response.data.status;
+          this.unrecognized.push(selected);
+        }
+      }
+      this.loadingAllState = false;
+    },
+    async recognize(data) {
+      let payload = {
+        filename: data.name,
+        inn: this.$store.state.INN,
+      };
+      if (data.file instanceof File) {
+        payload.file = data.file;
+      } else {
+        payload.url = data.file;
+      }
+      var form = new FormData();
+      for (let key in payload) {
+        form.append(key, payload[key]);
+      }
+      try {
+        return await axios.post("/rest_api/setting/recognize/", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } catch (error) {
+        this.$showErrorModal(error.response.data);
+      }
     },
   },
   async beforeMount() {
-    if (!this.$store.state.pathToFiles.length) {
+    if (
+      !this.$store.state.pathToFiles.length &&
+      !this.$store.state.tree.length
+    ) {
       this.$router.replace({ name: "Home" });
+      return;
     }
-    var t = this;
-    fetch(
-      `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${this.$store.state.pathToFiles}`
-    )
-      .then((res) => res.json())
-      .then((json) => {
-        for (let data of json._embedded.items) {
-          if (data.type === "dir") {
-            data._embedded = {
-              items: [],
-            };
-          }
-        }
-        t.dataFiles = [json];
-      })
-      .catch((err) => console.warn(err));
+    if (!this.$store.state.tree.length) {
+      await this.$store.dispatch("getFiles");
+    }
   },
 };
 </script>
