@@ -1,6 +1,6 @@
 from src.base.utils import send_to_API
 from rest_framework.response import Response
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from src.base.models import Setting
 from src.base.serializers import RecognizeSerializer, SettingSerializer
@@ -31,6 +31,8 @@ class SettingViewSet(viewsets.ModelViewSet):
             ext=ext,
             setting=settings,
         )
+        if error_str:
+            raise serializers.ValidationError(error_str)
         mime_type = MIME_TYPES[ext]
 
         send_to_API(data['file'], file_name, code, data['inn'], mime_type)
@@ -38,7 +40,7 @@ class SettingViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 'new_name': file_name,
-                'code': mime_type,
+                'code': code,
                 'error_str': error_str,
             }
         )

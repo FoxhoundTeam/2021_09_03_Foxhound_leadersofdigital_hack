@@ -21,10 +21,12 @@ class SettingSerializer(serializers.ModelSerializer):
 
 class RecognizeSerializer(serializers.Serializer):
     filename = serializers.CharField()
-    url = serializers.URLField()
+    url = serializers.URLField(required=False)
+    file = serializers.FileField(required=False)
     inn = serializers.CharField()
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        attrs['file'] = BytesIO(requests.get(attrs['url']).content)
+        if not attrs.get('file'):
+            attrs['file'] = BytesIO(requests.get(attrs['url']).content)
         return attrs

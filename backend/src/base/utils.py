@@ -8,7 +8,7 @@ from src.settings import CREDS, API_URL
 from src.base.xls_processing import analyze_xls
 
 
-def send_to_API(file, name, code, inn, mime_type):
+def send_to_API(file, name, code, inn, mime_type, unrecognised=False):
     headers = {
         'Authorization': f"Basic {CREDS}",
     }
@@ -16,7 +16,7 @@ def send_to_API(file, name, code, inn, mime_type):
         'createRequest': json.dumps(
             {
                 'documentNomenclatureId': code,
-                'unrecognised': False,
+                'unrecognised': unrecognised,
                 'inn': inn,
             }
         )

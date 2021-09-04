@@ -1,10 +1,6 @@
 <template>
   <v-dialog v-model="show" max-width="800px" @click:outside="closeModal()">
     <v-card>
-      <!-- <v-skeleton-loader
-        v-if="loading"
-        type="card-heading, list-item, list-item, list-item, actions"
-      ></v-skeleton-loader> -->
       <template>
         <v-card-title>
           <span class="text-h5">{{
@@ -18,13 +14,13 @@
             v-model="settings.name"
             label="Наименование по номенклатуре (корректное)"
             counter
-            maxlength="32"
+            maxlength="256"
           ></v-text-field>
           <v-text-field
             v-model="settings.code"
             label="Коды номенклатур документов"
             counter
-            maxlength="36"
+            maxlength="64"
           ></v-text-field>
           <v-select
             :items="formats"
