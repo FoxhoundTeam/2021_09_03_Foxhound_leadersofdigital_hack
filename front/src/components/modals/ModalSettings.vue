@@ -80,7 +80,7 @@
 export default {
   data() {
     return {
-      formats: ["xlsx", "pdf"],
+      formats: ["xlsx", "pdf", "xls"],
       types: [
         {
           name: "Регулярное выражение",

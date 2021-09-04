@@ -8,4 +8,4 @@ pip3 install textract
 pip3 install pytesseract
 pip3 install pdf2image
 pip3 install PyMuPDF Pillow
-sudo apt-get install tesseract-ocr
+apt-get -y install tesseract-ocr

@@ -23,9 +23,9 @@ class SettingViewSet(viewsets.ModelViewSet):
         data = RecognizeSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         data = data.validated_data
-        settings = SettingSerializer(Setting.objects.all(), many=True).data
         old_name = data['filename']
         ext = old_name.split('.')[-1]
+        settings = SettingSerializer(Setting.objects.filter(type=ext), many=True).data
         file_name, code, error_str = process_doc(
             file=data['file'],
             ext=ext,

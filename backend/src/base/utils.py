@@ -1,3 +1,4 @@
+from backend.src.base.models import Setting
 from typing import Tuple
 
 import requests
@@ -39,5 +40,6 @@ def process_doc(file, ext, setting) -> Tuple[str, str, str]:
     except Exception as ex:
         return "None", "None", f"Ошибка в процессе обработки {ex}"
     # recommended_name = get_recommended_name(filename, type)
-    recommended_name = ''
+    setting = Setting.objects.get(code=code)
+    recommended_name = setting.name + '.' + setting.type
     return recommended_name, code, ''
