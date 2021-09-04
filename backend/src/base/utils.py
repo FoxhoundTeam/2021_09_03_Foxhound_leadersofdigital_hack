@@ -26,6 +26,7 @@ def send_to_API(file, name, code, inn, mime_type):
     r = requests.post(API_URL, headers=headers, data=data, files=files)
     print(r.content)
 
+
 def process_doc(file, ext, setting) -> Tuple[str, str, str]:
     try:
         if ext in ("xlsx", 'xls'):
