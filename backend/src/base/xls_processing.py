@@ -1,5 +1,4 @@
 import math
-from typing import Dict
 
 import pandas as pd
 import re
@@ -8,15 +7,13 @@ import re
 def analyze_xls(file, settings) -> str:
     try:
         df = pd.read_excel(file)
-        criterias_data = [{"name": "Камаз", "code": "12345",
-                           "criterias": [{"type": "r", "text": ""}, {"type": "s", "text": ''}]}]
         phrases = set()
         for column in df:
             for cell in df[column]:
                 if cell != math.nan:
                     phrases.add(str(cell))
 
-        for criterias_type in criterias_data:
+        for criterias_type in settings:
             global_allow = True
             for critetias in criterias_type['criterias']:
                 allow = False
