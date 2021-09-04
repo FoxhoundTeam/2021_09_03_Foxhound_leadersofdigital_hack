@@ -4,7 +4,7 @@
 import textract # https://textract.readthedocs.io/en/latest/installation.html
 
 import fitz
-from pillow import Image
+from PIL import Image
 
 import pytesseract
 import sys, os, io, tempfile, re
@@ -40,7 +40,10 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
         print("temp_file.name = ", temp_file.name)
     
     text_from_pdf = textract.process(temp_file.name)
-    result_text += text_from_pdf.decode("utf-8")
+    result_text += text_from_pdf.decode("utf-8").lower()
+    code = regexp_classifier(result_text, settings)
+    if code is not None:
+        return code
 
     pdf_file = fitz.open(temp_file.name)
 
@@ -81,17 +84,18 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
             
             try:
                 pytesseract_str = pytesseract.image_to_string(pil_image, lang="rus")
-                result_text += pytesseract_str
+                result_text += pytesseract_str.lower()
                 if __name__ == "__main__":
                     print("pytesseract returns: ", pytesseract_str)
+                code = regexp_classifier(result_text, settings)
+                if code is not None:
+                    return code
             except Exception as e:
                 if __name__ == "__main__":
                     print("Не удалось обработать изображение",
                     ", страница ", image_index,
                     ", расширение ", base_image["ext"],
                     ", размер ", str(base_image["width"]) + "x" + str(base_image["height"]))
-
-
 
     result_text = result_text.lower()
     code = regexp_classifier(result_text, settings)
@@ -131,7 +135,8 @@ def regexp_classifier(doc_text : str, settings) -> str:
         for criterias in criterias_type['criterias']:
             if criterias['type'] == 'r':
                 match = re.search(criterias['text'], doc_text)
-                print("match = ", match)
+                if __name__ == "__main__":
+                    print("match = ", match)
                 if match:
                     return criterias_type['code']
             elif criterias['type'] == 's':
