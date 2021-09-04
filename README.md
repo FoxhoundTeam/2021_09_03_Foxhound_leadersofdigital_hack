@@ -1,5 +1,12 @@
 # 2021_09_03_Foxhound_leadersofdigital_hack
 Хакатон "Цифровой прорыв", 3-5 сентября 2021 г
+## Каталоги
+
+`backend` - веб-приложение, разработанное с использованием Django
+
+`front` - веб-клиент для веб-приложения, разработанный с использованием VueJS
+
+`compose` - конфигурация docker-compose
 ## Развертывание через docker-compose
 1. Установить [docker](https://docs.docker.com/engine/install/ubuntu/)
 2. Установить [docker-compose](https://docs.docker.com/compose/install/)
