@@ -86,7 +86,7 @@ REST_FRAMEWORK = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'db', 'db.sqlite3'),
     }
 }
 
@@ -130,3 +130,4 @@ API_URL = 'http://elib-hackathon.psb.netintel.ru/elib/api/service/documents'
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/webapp/static'

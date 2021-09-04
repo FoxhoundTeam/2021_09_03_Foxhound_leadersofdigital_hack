@@ -1,0 +1,17 @@
+version: '2.4'
+
+services:
+  web_base:
+    image: foxhound_web
+    restart: unless-stopped
+    volumes:
+      - ./mounts/uwsgi:/uwsgi
+      - ./mounts/db:/webapp/db
+      - ./mounts/logs:/webapp/logs
+      - ./mounts/media:/webapp/media
+      - ./mounts/static:/webapp/static
+      - ./mounts/ipython_data:/root/.ipython/profile_default
+    environment:
+      HOST: http://web:80
+    command: /commands/web.sh
+    env_file: .env

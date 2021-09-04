@@ -1,0 +1,27 @@
+version: '2.4'
+
+services:
+  web:
+    extends:
+      file: common.yml
+      service: web_base
+    command: /commands/web.sh
+    env_file: .uwsgi.env
+
+  frontend:
+    image: foxhound_frontend
+    restart: unless-stopped
+
+  nginx:
+    image: foxhound_nginx
+    restart: unless-stopped
+    depends_on:
+      - web
+      - frontend
+    ports:
+      - 127.0.0.1:${HTTP_PORT}:80
+    volumes:
+      - ./mounts/uwsgi:/uwsgi
+      - ./mounts/logs/nginx:/var/log/nginx
+      - ./mounts/media:/webapp/media:ro
+      - ./mounts/static:/webapp/static:ro
