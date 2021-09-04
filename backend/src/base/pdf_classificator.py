@@ -33,34 +33,38 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
     '''
     result_text = ""
 
+    # сохранение содержимого файла из BytesIO во временный файл, т.к. обработчики pdf работают только с файлами
     temp_file = tempfile.NamedTemporaryFile(delete=True,suffix=".pdf")
     streamfile.seek(0)
     temp_file.write(streamfile.read())
-    if __name__ == "__main__":
+
+    if __name__ == "__main__":  # диагностическая печать названия временного файла для отладки
         print("temp_file.name = ", temp_file.name)
     
+    # извлечение текста, хранящегося в pdf
     text_from_pdf = textract.process(temp_file.name)
     result_text += text_from_pdf.decode("utf-8").lower()
+
+    # попытка классифицировать документ по накопленному тексту
     code = regexp_classifier(result_text, settings)
     if code is not None:
         return code
 
+    # открытие pdf для извлечения изображений и их распознавания
     pdf_file = fitz.open(temp_file.name)
 
-    file_counter = 0
+    file_counter = 0 # счётчик извлечённых изображений
 
-    # iterate over PDF pages
+    # цикл по страницам pdf
     for page_index in range(min(len(pdf_file), 4)):
         
-        # get the page itself
         page = pdf_file[page_index]
-        image_list = page.getImageList()
-        
-        # printing number of images found in this page
-        # if image_list:
-        #     print(f"[+] Found a total of {len(image_list)} images in page {page_index}")
-        # else:
-        #     print("[!] No images found on page", page_index)
+        if __name__ == "__main__": # диагностический вывод сводки по страницам для отладки
+            image_list = page.getImageList()
+            if image_list:
+                print(f"[+] Found a total of {len(image_list)} images in page {page_index}")
+            else:
+                print("[!] No images found on page", page_index)
 
         for image_index, img in enumerate(page.getImageList(), start=1):
 
@@ -76,7 +80,7 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
             buffer.seek(0)
             pil_image = Image.open(buffer)
 
-            if __name__ == "__main__":
+            if __name__ == "__main__": # диагностическая запись извлечённых изображений для отладки
                 fl = open("img_" + str(file_counter) + "." + base_image["ext"], "wb+")
                 fl.write(base_image["image"])
                 fl.close()
@@ -85,7 +89,7 @@ def analyze_pdf2(streamfile: BytesIO, settings) -> str:
             try:
                 pytesseract_str = pytesseract.image_to_string(pil_image, lang="rus")
                 result_text += pytesseract_str.lower()
-                if __name__ == "__main__":
+                if __name__ == "__main__": # диагностическая печать для отладки
                     print("pytesseract returns: ", pytesseract_str)
                 code = regexp_classifier(result_text, settings)
                 if code is not None:
@@ -148,7 +152,7 @@ def regexp_classifier(doc_text : str, settings) -> str:
 
 if __name__ == "__main__":
     print("*** analyze_pdf2(text):")
-    filename = 'example_scan.pdf'
+    filename = 'Устав НКХП.pdf'
     tmp_file = open(filename, 'rb')
     streamfile = BytesIO(tmp_file.read())
     tmp_file.close()
@@ -168,7 +172,7 @@ if __name__ == "__main__":
         "code":"33a37ce4-c6a9-4dad-8424-707abd47c125",
         "criterias": [
             {"type":"r",
-            "text": r"устав\sобществ"},
+            "text": r"устав\s*\w*\s*\w*\s*обществ"},
             # {"type":"s",
             # "text": "text"}
             ]
