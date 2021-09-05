@@ -11,7 +11,7 @@
         >
         <v-toolbar-title v-else
           >Распознаем документы... Распознано {{ recognized.length }} из
-          {{ $store.state.filesToRecognize.length }} файлов, с ошибкой
+          {{ $store.state.filesToRecognize.length }} файлов, не распознано
           {{ unrecognized.length }}</v-toolbar-title
         >
         <v-progress-linear
@@ -30,7 +30,7 @@
           dark
           text
           @click="loadAll"
-          :disabled="!$store.state.filesToRecognize.length"
+          :disabled="!$store.state.filesToRecognize.length || loadingAllState"
           >Распознать все</v-btn
         >
       </v-toolbar-items>

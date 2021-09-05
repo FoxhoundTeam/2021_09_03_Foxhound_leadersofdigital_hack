@@ -125,9 +125,12 @@ def regexp_classifier(doc_text : str, settings) -> str:
     Функция классифицирует извлечённый текст с помощью сопоставления
     по регулярным выражениям
 
-    Возвращает код документа или None
+    Возвращает код документа или None, а также статус
 
     '''
+
+    matches = dict.fromkeys(list(map(lambda x: x['code'], settings)), 0)
+
     for criterias_type in settings:
         for criterias in criterias_type['criterias']:
             if criterias['type'] == 'r':
@@ -135,13 +138,16 @@ def regexp_classifier(doc_text : str, settings) -> str:
                 if __name__ == "__main__":
                     print("match = ", match)
                 if match:
-                    return criterias_type['code'], 'OK'
+                    matches[criterias_type['code']] += 1
             elif criterias['type'] == 's':
                 if criterias['text'] in doc_text:
-                    return criterias_type['code'], 'OK'
+                    matches[criterias_type['code']] += 1
             else:
-                return None, 'Не подходит под текущие критерии'
-    return None, 'Не подходит под текущие критерии'
+                continue
+    
+    matches = sorted(matches.items(), key=lambda a: a[1], reverse=True)
+    code = matches[0][0] if matches[0][1] else None
+    return code, 'Не подходит под текущие критерии' if not code else 'OK'
 
 if __name__ == "__main__":
     print("*** analyze_pdf2(text):")
@@ -155,7 +161,7 @@ if __name__ == "__main__":
         "code":"555ced1c-c169-4d61-9a82-348801494581",
         "criterias": [
             {"type":"r",
-            "text": r"положен\w*\s*совет\w*\s*директоров"},
+            "text": r"положен\w*\s*о\s*совет\w*\s*директоров"},
             # {"type":"s",
             # "text": "text"}
             ]
